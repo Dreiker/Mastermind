@@ -5,17 +5,23 @@
  */
 package mastermind;
 
+import Socket.Servidor;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.io.IOException;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 /**
  *
  * @author Juan Manuel
  */
-public class Mastermind extends javax.swing.JFrame {
+public class MastermindServidor extends javax.swing.JFrame {
 
     /**
      * Número de botones que hay en posición horizontal.
@@ -26,28 +32,72 @@ public class Mastermind extends javax.swing.JFrame {
      */
     final int NUM_BOTONES_LARGO = 8;
 
-    boolean rojoUsado = false;
-    boolean verdeUsado = false;
-    boolean azulUsado = false;
-    boolean amarilloUsado = false;
-    char combinacionSecreta[] = new char[4];
+    private Servidor servidor;
+    
+    private boolean rojoUsado = false;
+    private boolean verdeUsado = false;
+    private boolean azulUsado = false;
+    private boolean amarilloUsado = false;
+    private char combinacionSecreta[] = new char[4];
 
-    int posicionY = 0;
-    int posicionX = -1;
+    private int posicionY = 0;
+    private int posicionX = -1;
 
-    final char COLOR_ROJO = 'R';
-    final char COLOR_VERDE = 'G';
-    final char COLOR_AZUL = 'B';
-    final char COLOR_AMARILLO = 'Y';
+    private final char COLOR_ROJO = 'R';
+    private final char COLOR_VERDE = 'G';
+    private final char COLOR_AZUL = 'B';
+    private final char COLOR_AMARILLO = 'Y';
 
-    JLabel[][] botones;
-    JLabel[][] pistas;
+    private JLabel[][] botonesJugador1;
+    private JLabel[][] pistasJugador1;
+    private JLabel[][] botonesJugador2;
+    private JLabel[][] pistasJugador2;
 
-    public Mastermind() {
+    public JLabel[][] getBotonesJugador1() {
+        return botonesJugador1;
+    }
+
+    public JLabel[][] getBotonesJugador2() {
+        return botonesJugador2;
+    }
+    
+    public JButton getBotonRojo() {
+        return botonRojo;
+    }
+    
+    public JButton getBotonVerde() {
+        return botonVerde;
+    }
+
+    public JButton getBotonAzul() {
+        return botonAzul;
+    }
+
+    public JButton getBotonAmarillo() {
+        return botonAmarillo;
+    }
+    
+    public JButton getBotonIntroducir() {
+        return botonIntroducir;
+    }
+
+    public JButton getBotonRetroceder() {
+        return botonRetroceder;
+    }
+
+    public MastermindServidor() {
         initComponents();
+        setTitle("Mastermind servidor");
+
+        try {
+            servidor = new Servidor(this);
+            servidor.start();
+        } catch (IOException ex) {
+            Logger.getLogger(MastermindServidor.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         // Inicializar componentes de la ventana.
-        JLabel[][] botones = {
+        JLabel[][] botonesJugador1Init = {
             {espacio1, espacio2, espacio3, espacio4},
             {espacio5, espacio6, espacio7, espacio8},
             {espacio9, espacio10, espacio11, espacio12},
@@ -57,8 +107,19 @@ public class Mastermind extends javax.swing.JFrame {
             {espacio25, espacio26, espacio27, espacio28},
             {espacio29, espacio30, espacio31, espacio32}
         };
+        
+        JLabel[][] botonesJugador2Init = {
+            {espacio33, espacio34, espacio35, espacio36},
+            {espacio37, espacio38, espacio39, espacio40},
+            {espacio41, espacio42, espacio43, espacio44},
+            {espacio45, espacio46, espacio47, espacio48},
+            {espacio49, espacio50, espacio51, espacio52},
+            {espacio53, espacio54, espacio55, espacio56},
+            {espacio57, espacio58, espacio59, espacio60},
+            {espacio61, espacio62, espacio63, espacio64}
+        };
 
-        JLabel[][] pistas = {
+        JLabel[][] pistasJugador1Init = {
             {pista1, pista2, pista3, pista4},
             {pista5, pista6, pista7, pista8},
             {pista9, pista10, pista11, pista12},
@@ -68,8 +129,22 @@ public class Mastermind extends javax.swing.JFrame {
             {pista25, pista26, pista27, pista28},
             {pista29, pista30, pista31, pista32}
         };
-        this.botones = botones;
-        this.pistas = pistas;
+        
+        JLabel[][] pistasJugador2Init = {
+            {pista33, pista34, pista35, pista36},
+            {pista37, pista38, pista39, pista40},
+            {pista41, pista42, pista43, pista44},
+            {pista45, pista46, pista47, pista48},
+            {pista49, pista50, pista51, pista52},
+            {pista53, pista54, pista55, pista56},
+            {pista57, pista58, pista59, pista60},
+            {pista61, pista62, pista63, pista64}
+        };
+        
+        this.botonesJugador1 = botonesJugador1Init;
+        this.pistasJugador1 = pistasJugador1Init;
+        this.botonesJugador2 = botonesJugador2Init;
+        this.pistasJugador2 = pistasJugador2Init;
 
         //Centrar ventana.
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
@@ -139,29 +214,42 @@ public class Mastermind extends javax.swing.JFrame {
     private void comprobarCasilla() {
         
         for (int i = 0; i < 4; i++) {
-            if(botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i]))
-                pistas[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GREEN);
+            if(botonesJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i]))
+                pistasJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GREEN);
             else 
-                pistas[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GRAY);
+                pistasJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GRAY);
         }
         
-         if(botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 0].getBackground() == obtenerColor(combinacionSecreta[0])
-                    && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 1].getBackground() == obtenerColor(combinacionSecreta[1])
-                    && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 2].getBackground() == obtenerColor(combinacionSecreta[2])
-                    && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 3].getBackground() == obtenerColor(combinacionSecreta[3])){
-                finDelJuego();
+         if(botonesJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 0].getBackground() == obtenerColor(combinacionSecreta[0])
+                    && botonesJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 1].getBackground() == obtenerColor(combinacionSecreta[1])
+                    && botonesJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 2].getBackground() == obtenerColor(combinacionSecreta[2])
+                    && botonesJugador1[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 3].getBackground() == obtenerColor(combinacionSecreta[3])){
+                finDelJuego("¡Has ganado!");
             }
     }
     
-    private void finDelJuego(){
+    private void enviar(String string) {
+        try {
+            servidor.enviar(string);
+        } catch (IOException ex) {
+            Logger.getLogger(MastermindCliente.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private void finDelJuego(String string){
         if(posicionY == NUM_BOTONES_LARGO - 1){
             for (int i = 0; i < 4; i++) {
-                if(botones[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i]))
-                    pistas[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GREEN);
+                if(botonesJugador1[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i]))
+                    pistasJugador1[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GREEN);
                 else 
-                    pistas[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GRAY);
+                    pistasJugador1[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GRAY);
             }
         }
+        
+        combinacion1.setBackground(obtenerColor(combinacionSecreta[0]));
+        combinacion2.setBackground(obtenerColor(combinacionSecreta[1]));
+        combinacion3.setBackground(obtenerColor(combinacionSecreta[2]));
+        combinacion4.setBackground(obtenerColor(combinacionSecreta[3]));
         
         botonRojo.setEnabled(false);
         botonVerde.setEnabled(false);
@@ -170,13 +258,14 @@ public class Mastermind extends javax.swing.JFrame {
         botonIntroducir.setEnabled(false);
         botonRetroceder.setEnabled(false);
         
-        combinacion1.setBackground(obtenerColor(combinacionSecreta[0]));
-        combinacion2.setBackground(obtenerColor(combinacionSecreta[1]));
-        combinacion3.setBackground(obtenerColor(combinacionSecreta[2]));
-        combinacion4.setBackground(obtenerColor(combinacionSecreta[3]));
+        if(string.equalsIgnoreCase("Has perdido :("))
+            enviar("finVictoria");
+        else if(string.equalsIgnoreCase("¡Has ganado!"))
+            enviar("finDerrota");
         
+        JOptionPane.showMessageDialog(this, string);
     }
-
+   
     private void bonusMode() {
 
         Random random = new Random();
@@ -186,16 +275,16 @@ public class Mastermind extends javax.swing.JFrame {
 
                 switch (random.nextInt(4)) {
                     case 0:
-                        botones[y][x].setBackground(Color.red);
+                        botonesJugador1[y][x].setBackground(Color.red);
                         break;
                     case 1:
-                        botones[y][x].setBackground(Color.green);
+                        botonesJugador1[y][x].setBackground(Color.green);
                         break;
                     case 2:
-                        botones[y][x].setBackground(Color.blue);
+                        botonesJugador1[y][x].setBackground(Color.blue);
                         break;
                     case 3:
-                        botones[y][x].setBackground(Color.yellow);
+                        botonesJugador1[y][x].setBackground(Color.yellow);
                         break;
                 }
 
@@ -305,6 +394,94 @@ public class Mastermind extends javax.swing.JFrame {
         pista30 = new javax.swing.JLabel();
         pista31 = new javax.swing.JLabel();
         pista32 = new javax.swing.JLabel();
+        panelPrincipal1 = new javax.swing.JPanel();
+        panel10 = new javax.swing.JPanel();
+        espacio33 = new javax.swing.JLabel();
+        espacio34 = new javax.swing.JLabel();
+        espacio35 = new javax.swing.JLabel();
+        espacio36 = new javax.swing.JLabel();
+        panelPistas9 = new javax.swing.JPanel();
+        pista33 = new javax.swing.JLabel();
+        pista34 = new javax.swing.JLabel();
+        pista35 = new javax.swing.JLabel();
+        pista36 = new javax.swing.JLabel();
+        panel11 = new javax.swing.JPanel();
+        espacio37 = new javax.swing.JLabel();
+        espacio38 = new javax.swing.JLabel();
+        espacio39 = new javax.swing.JLabel();
+        espacio40 = new javax.swing.JLabel();
+        panelPistas10 = new javax.swing.JPanel();
+        pista37 = new javax.swing.JLabel();
+        pista38 = new javax.swing.JLabel();
+        pista39 = new javax.swing.JLabel();
+        pista40 = new javax.swing.JLabel();
+        panel12 = new javax.swing.JPanel();
+        espacio41 = new javax.swing.JLabel();
+        espacio42 = new javax.swing.JLabel();
+        espacio43 = new javax.swing.JLabel();
+        espacio44 = new javax.swing.JLabel();
+        panelPistas11 = new javax.swing.JPanel();
+        pista41 = new javax.swing.JLabel();
+        pista42 = new javax.swing.JLabel();
+        pista43 = new javax.swing.JLabel();
+        pista44 = new javax.swing.JLabel();
+        panel13 = new javax.swing.JPanel();
+        espacio45 = new javax.swing.JLabel();
+        espacio46 = new javax.swing.JLabel();
+        espacio47 = new javax.swing.JLabel();
+        panelPistas12 = new javax.swing.JPanel();
+        pista45 = new javax.swing.JLabel();
+        pista46 = new javax.swing.JLabel();
+        pista47 = new javax.swing.JLabel();
+        pista48 = new javax.swing.JLabel();
+        espacio48 = new javax.swing.JLabel();
+        panel14 = new javax.swing.JPanel();
+        espacio49 = new javax.swing.JLabel();
+        espacio50 = new javax.swing.JLabel();
+        espacio51 = new javax.swing.JLabel();
+        espacio52 = new javax.swing.JLabel();
+        panelPistas13 = new javax.swing.JPanel();
+        pista49 = new javax.swing.JLabel();
+        pista50 = new javax.swing.JLabel();
+        pista51 = new javax.swing.JLabel();
+        pista52 = new javax.swing.JLabel();
+        panel15 = new javax.swing.JPanel();
+        espacio53 = new javax.swing.JLabel();
+        espacio54 = new javax.swing.JLabel();
+        espacio55 = new javax.swing.JLabel();
+        espacio56 = new javax.swing.JLabel();
+        panelPistas14 = new javax.swing.JPanel();
+        pista53 = new javax.swing.JLabel();
+        pista54 = new javax.swing.JLabel();
+        pista55 = new javax.swing.JLabel();
+        pista56 = new javax.swing.JLabel();
+        panel16 = new javax.swing.JPanel();
+        espacio57 = new javax.swing.JLabel();
+        espacio58 = new javax.swing.JLabel();
+        espacio59 = new javax.swing.JLabel();
+        espacio60 = new javax.swing.JLabel();
+        panelPistas15 = new javax.swing.JPanel();
+        pista57 = new javax.swing.JLabel();
+        pista58 = new javax.swing.JLabel();
+        pista59 = new javax.swing.JLabel();
+        pista60 = new javax.swing.JLabel();
+        panel17 = new javax.swing.JPanel();
+        espacio61 = new javax.swing.JLabel();
+        espacio62 = new javax.swing.JLabel();
+        espacio63 = new javax.swing.JLabel();
+        espacio64 = new javax.swing.JLabel();
+        panel18 = new javax.swing.JPanel();
+        combinacion5 = new javax.swing.JLabel();
+        combinacion6 = new javax.swing.JLabel();
+        combinacion7 = new javax.swing.JLabel();
+        combinacion8 = new javax.swing.JLabel();
+        panelPistas16 = new javax.swing.JPanel();
+        pista61 = new javax.swing.JLabel();
+        pista62 = new javax.swing.JLabel();
+        pista63 = new javax.swing.JLabel();
+        pista64 = new javax.swing.JLabel();
+        panelMenu1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -1230,8 +1407,7 @@ public class Mastermind extends javax.swing.JFrame {
                         .addComponent(panelPistas8, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(panel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(panel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(1, 1, 1))
+                    .addComponent(panel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         panelPrincipalLayout.setVerticalGroup(
             panelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1259,74 +1435,980 @@ public class Mastermind extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        panelPrincipal1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        espacio33.setBackground(new java.awt.Color(238, 248, 251));
+        espacio33.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio33.setOpaque(true);
+
+        espacio34.setBackground(new java.awt.Color(238, 248, 251));
+        espacio34.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio34.setOpaque(true);
+
+        espacio35.setBackground(new java.awt.Color(238, 248, 251));
+        espacio35.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio35.setOpaque(true);
+
+        espacio36.setBackground(new java.awt.Color(238, 248, 251));
+        espacio36.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio36.setOpaque(true);
+
+        panelPistas9.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista33.setBackground(new java.awt.Color(204, 204, 204));
+        pista33.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista33.setOpaque(true);
+
+        pista34.setBackground(new java.awt.Color(204, 204, 204));
+        pista34.setForeground(new java.awt.Color(51, 255, 51));
+        pista34.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista34.setOpaque(true);
+
+        pista35.setBackground(new java.awt.Color(204, 204, 204));
+        pista35.setForeground(new java.awt.Color(51, 255, 51));
+        pista35.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista35.setOpaque(true);
+
+        pista36.setBackground(new java.awt.Color(204, 204, 204));
+        pista36.setForeground(new java.awt.Color(51, 255, 51));
+        pista36.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista36.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas9Layout = new javax.swing.GroupLayout(panelPistas9);
+        panelPistas9.setLayout(panelPistas9Layout);
+        panelPistas9Layout.setHorizontalGroup(
+            panelPistas9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas9Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas9Layout.createSequentialGroup()
+                        .addComponent(pista33, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista34, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas9Layout.createSequentialGroup()
+                        .addComponent(pista35, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista36, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas9Layout.setVerticalGroup(
+            panelPistas9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas9Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista33, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista34, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista35, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista36, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panel10Layout = new javax.swing.GroupLayout(panel10);
+        panel10.setLayout(panel10Layout);
+        panel10Layout.setHorizontalGroup(
+            panel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel10Layout.createSequentialGroup()
+                .addComponent(panelPistas9, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio33, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio34, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio35, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio36, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel10Layout.setVerticalGroup(
+            panel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel10Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas9, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio34, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio33, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio35, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio36, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio37.setBackground(new java.awt.Color(238, 248, 251));
+        espacio37.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio37.setOpaque(true);
+
+        espacio38.setBackground(new java.awt.Color(238, 248, 251));
+        espacio38.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio38.setOpaque(true);
+
+        espacio39.setBackground(new java.awt.Color(238, 248, 251));
+        espacio39.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio39.setOpaque(true);
+
+        espacio40.setBackground(new java.awt.Color(238, 248, 251));
+        espacio40.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio40.setOpaque(true);
+
+        panelPistas10.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista37.setBackground(new java.awt.Color(204, 204, 204));
+        pista37.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista37.setOpaque(true);
+
+        pista38.setBackground(new java.awt.Color(204, 204, 204));
+        pista38.setForeground(new java.awt.Color(51, 255, 51));
+        pista38.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista38.setOpaque(true);
+
+        pista39.setBackground(new java.awt.Color(204, 204, 204));
+        pista39.setForeground(new java.awt.Color(51, 255, 51));
+        pista39.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista39.setOpaque(true);
+
+        pista40.setBackground(new java.awt.Color(204, 204, 204));
+        pista40.setForeground(new java.awt.Color(51, 255, 51));
+        pista40.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista40.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas10Layout = new javax.swing.GroupLayout(panelPistas10);
+        panelPistas10.setLayout(panelPistas10Layout);
+        panelPistas10Layout.setHorizontalGroup(
+            panelPistas10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas10Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas10Layout.createSequentialGroup()
+                        .addComponent(pista37, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista38, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas10Layout.createSequentialGroup()
+                        .addComponent(pista39, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista40, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas10Layout.setVerticalGroup(
+            panelPistas10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas10Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista37, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista38, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista39, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista40, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panel11Layout = new javax.swing.GroupLayout(panel11);
+        panel11.setLayout(panel11Layout);
+        panel11Layout.setHorizontalGroup(
+            panel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel11Layout.createSequentialGroup()
+                .addComponent(panelPistas10, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio37, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio38, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio39, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio40, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel11Layout.setVerticalGroup(
+            panel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel11Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas10, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio38, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio37, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio39, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio40, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio41.setBackground(new java.awt.Color(238, 248, 251));
+        espacio41.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio41.setOpaque(true);
+
+        espacio42.setBackground(new java.awt.Color(238, 248, 251));
+        espacio42.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio42.setOpaque(true);
+
+        espacio43.setBackground(new java.awt.Color(238, 248, 251));
+        espacio43.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio43.setOpaque(true);
+
+        espacio44.setBackground(new java.awt.Color(238, 248, 251));
+        espacio44.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio44.setOpaque(true);
+
+        panelPistas11.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista41.setBackground(new java.awt.Color(204, 204, 204));
+        pista41.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista41.setOpaque(true);
+
+        pista42.setBackground(new java.awt.Color(204, 204, 204));
+        pista42.setForeground(new java.awt.Color(51, 255, 51));
+        pista42.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista42.setOpaque(true);
+
+        pista43.setBackground(new java.awt.Color(204, 204, 204));
+        pista43.setForeground(new java.awt.Color(51, 255, 51));
+        pista43.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista43.setOpaque(true);
+
+        pista44.setBackground(new java.awt.Color(204, 204, 204));
+        pista44.setForeground(new java.awt.Color(51, 255, 51));
+        pista44.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista44.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas11Layout = new javax.swing.GroupLayout(panelPistas11);
+        panelPistas11.setLayout(panelPistas11Layout);
+        panelPistas11Layout.setHorizontalGroup(
+            panelPistas11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas11Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas11Layout.createSequentialGroup()
+                        .addComponent(pista41, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista42, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas11Layout.createSequentialGroup()
+                        .addComponent(pista43, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista44, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas11Layout.setVerticalGroup(
+            panelPistas11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas11Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista41, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista42, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista43, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista44, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panel12Layout = new javax.swing.GroupLayout(panel12);
+        panel12.setLayout(panel12Layout);
+        panel12Layout.setHorizontalGroup(
+            panel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel12Layout.createSequentialGroup()
+                .addComponent(panelPistas11, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio41, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio42, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio43, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio44, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel12Layout.setVerticalGroup(
+            panel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel12Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas11, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio42, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio41, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio43, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio44, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio45.setBackground(new java.awt.Color(238, 248, 251));
+        espacio45.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio45.setOpaque(true);
+
+        espacio46.setBackground(new java.awt.Color(238, 248, 251));
+        espacio46.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio46.setOpaque(true);
+
+        espacio47.setBackground(new java.awt.Color(238, 248, 251));
+        espacio47.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio47.setOpaque(true);
+
+        panelPistas12.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista45.setBackground(new java.awt.Color(204, 204, 204));
+        pista45.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista45.setOpaque(true);
+
+        pista46.setBackground(new java.awt.Color(204, 204, 204));
+        pista46.setForeground(new java.awt.Color(51, 255, 51));
+        pista46.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista46.setOpaque(true);
+
+        pista47.setBackground(new java.awt.Color(204, 204, 204));
+        pista47.setForeground(new java.awt.Color(51, 255, 51));
+        pista47.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista47.setOpaque(true);
+
+        pista48.setBackground(new java.awt.Color(204, 204, 204));
+        pista48.setForeground(new java.awt.Color(51, 255, 51));
+        pista48.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista48.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas12Layout = new javax.swing.GroupLayout(panelPistas12);
+        panelPistas12.setLayout(panelPistas12Layout);
+        panelPistas12Layout.setHorizontalGroup(
+            panelPistas12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas12Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas12Layout.createSequentialGroup()
+                        .addComponent(pista45, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista46, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas12Layout.createSequentialGroup()
+                        .addComponent(pista47, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista48, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas12Layout.setVerticalGroup(
+            panelPistas12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas12Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista45, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista46, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista47, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista48, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        espacio48.setBackground(new java.awt.Color(238, 248, 251));
+        espacio48.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio48.setOpaque(true);
+
+        javax.swing.GroupLayout panel13Layout = new javax.swing.GroupLayout(panel13);
+        panel13.setLayout(panel13Layout);
+        panel13Layout.setHorizontalGroup(
+            panel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel13Layout.createSequentialGroup()
+                .addComponent(panelPistas12, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio45, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio46, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio47, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio48, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel13Layout.setVerticalGroup(
+            panel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel13Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas12, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio46, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio45, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio47, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio48, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio49.setBackground(new java.awt.Color(238, 248, 251));
+        espacio49.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio49.setOpaque(true);
+
+        espacio50.setBackground(new java.awt.Color(238, 248, 251));
+        espacio50.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio50.setOpaque(true);
+
+        espacio51.setBackground(new java.awt.Color(238, 248, 251));
+        espacio51.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio51.setOpaque(true);
+
+        espacio52.setBackground(new java.awt.Color(238, 248, 251));
+        espacio52.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio52.setOpaque(true);
+
+        panelPistas13.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista49.setBackground(new java.awt.Color(204, 204, 204));
+        pista49.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista49.setOpaque(true);
+
+        pista50.setBackground(new java.awt.Color(204, 204, 204));
+        pista50.setForeground(new java.awt.Color(51, 255, 51));
+        pista50.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista50.setOpaque(true);
+
+        pista51.setBackground(new java.awt.Color(204, 204, 204));
+        pista51.setForeground(new java.awt.Color(51, 255, 51));
+        pista51.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista51.setOpaque(true);
+
+        pista52.setBackground(new java.awt.Color(204, 204, 204));
+        pista52.setForeground(new java.awt.Color(51, 255, 51));
+        pista52.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista52.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas13Layout = new javax.swing.GroupLayout(panelPistas13);
+        panelPistas13.setLayout(panelPistas13Layout);
+        panelPistas13Layout.setHorizontalGroup(
+            panelPistas13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas13Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas13Layout.createSequentialGroup()
+                        .addComponent(pista49, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista50, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas13Layout.createSequentialGroup()
+                        .addComponent(pista51, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista52, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas13Layout.setVerticalGroup(
+            panelPistas13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas13Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista49, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista50, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista51, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista52, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panel14Layout = new javax.swing.GroupLayout(panel14);
+        panel14.setLayout(panel14Layout);
+        panel14Layout.setHorizontalGroup(
+            panel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel14Layout.createSequentialGroup()
+                .addComponent(panelPistas13, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio49, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio50, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio51, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio52, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel14Layout.setVerticalGroup(
+            panel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel14Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas13, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio50, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio49, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio51, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio52, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio53.setBackground(new java.awt.Color(238, 248, 251));
+        espacio53.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio53.setOpaque(true);
+
+        espacio54.setBackground(new java.awt.Color(238, 248, 251));
+        espacio54.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio54.setOpaque(true);
+
+        espacio55.setBackground(new java.awt.Color(238, 248, 251));
+        espacio55.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio55.setOpaque(true);
+
+        espacio56.setBackground(new java.awt.Color(238, 248, 251));
+        espacio56.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio56.setOpaque(true);
+
+        panelPistas14.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista53.setBackground(new java.awt.Color(204, 204, 204));
+        pista53.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista53.setOpaque(true);
+
+        pista54.setBackground(new java.awt.Color(204, 204, 204));
+        pista54.setForeground(new java.awt.Color(51, 255, 51));
+        pista54.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista54.setOpaque(true);
+
+        pista55.setBackground(new java.awt.Color(204, 204, 204));
+        pista55.setForeground(new java.awt.Color(51, 255, 51));
+        pista55.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista55.setOpaque(true);
+
+        pista56.setBackground(new java.awt.Color(204, 204, 204));
+        pista56.setForeground(new java.awt.Color(51, 255, 51));
+        pista56.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista56.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas14Layout = new javax.swing.GroupLayout(panelPistas14);
+        panelPistas14.setLayout(panelPistas14Layout);
+        panelPistas14Layout.setHorizontalGroup(
+            panelPistas14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas14Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas14Layout.createSequentialGroup()
+                        .addComponent(pista53, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista54, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas14Layout.createSequentialGroup()
+                        .addComponent(pista55, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista56, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas14Layout.setVerticalGroup(
+            panelPistas14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas14Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista53, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista54, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista55, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista56, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panel15Layout = new javax.swing.GroupLayout(panel15);
+        panel15.setLayout(panel15Layout);
+        panel15Layout.setHorizontalGroup(
+            panel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel15Layout.createSequentialGroup()
+                .addComponent(panelPistas14, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio53, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio54, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio55, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio56, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel15Layout.setVerticalGroup(
+            panel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel15Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas14, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio54, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio53, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio55, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio56, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio57.setBackground(new java.awt.Color(238, 248, 251));
+        espacio57.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio57.setOpaque(true);
+
+        espacio58.setBackground(new java.awt.Color(238, 248, 251));
+        espacio58.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio58.setOpaque(true);
+
+        espacio59.setBackground(new java.awt.Color(238, 248, 251));
+        espacio59.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio59.setOpaque(true);
+
+        espacio60.setBackground(new java.awt.Color(238, 248, 251));
+        espacio60.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio60.setOpaque(true);
+
+        panelPistas15.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista57.setBackground(new java.awt.Color(204, 204, 204));
+        pista57.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista57.setOpaque(true);
+
+        pista58.setBackground(new java.awt.Color(204, 204, 204));
+        pista58.setForeground(new java.awt.Color(51, 255, 51));
+        pista58.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista58.setOpaque(true);
+
+        pista59.setBackground(new java.awt.Color(204, 204, 204));
+        pista59.setForeground(new java.awt.Color(51, 255, 51));
+        pista59.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista59.setOpaque(true);
+
+        pista60.setBackground(new java.awt.Color(204, 204, 204));
+        pista60.setForeground(new java.awt.Color(51, 255, 51));
+        pista60.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista60.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas15Layout = new javax.swing.GroupLayout(panelPistas15);
+        panelPistas15.setLayout(panelPistas15Layout);
+        panelPistas15Layout.setHorizontalGroup(
+            panelPistas15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas15Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas15Layout.createSequentialGroup()
+                        .addComponent(pista57, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista58, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas15Layout.createSequentialGroup()
+                        .addComponent(pista59, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista60, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas15Layout.setVerticalGroup(
+            panelPistas15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas15Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista57, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista58, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista59, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista60, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panel16Layout = new javax.swing.GroupLayout(panel16);
+        panel16.setLayout(panel16Layout);
+        panel16Layout.setHorizontalGroup(
+            panel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel16Layout.createSequentialGroup()
+                .addComponent(panelPistas15, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio57, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio58, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio59, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio60, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel16Layout.setVerticalGroup(
+            panel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel16Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPistas15, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio58, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio57, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio59, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio60, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+        );
+
+        espacio61.setBackground(new java.awt.Color(238, 248, 251));
+        espacio61.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio61.setOpaque(true);
+
+        espacio62.setBackground(new java.awt.Color(238, 248, 251));
+        espacio62.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio62.setOpaque(true);
+
+        espacio63.setBackground(new java.awt.Color(238, 248, 251));
+        espacio63.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio63.setOpaque(true);
+
+        espacio64.setBackground(new java.awt.Color(238, 248, 251));
+        espacio64.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        espacio64.setOpaque(true);
+
+        javax.swing.GroupLayout panel17Layout = new javax.swing.GroupLayout(panel17);
+        panel17.setLayout(panel17Layout);
+        panel17Layout.setHorizontalGroup(
+            panel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel17Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(espacio61, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio62, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio63, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(espacio64, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel17Layout.setVerticalGroup(
+            panel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel17Layout.createSequentialGroup()
+                .addGap(1, 1, 1)
+                .addGroup(panel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(espacio62, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(espacio61, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(espacio63, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(espacio64, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(1, 1, 1))
+        );
+
+        combinacion5.setBackground(new java.awt.Color(204, 204, 204));
+        combinacion5.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        combinacion5.setOpaque(true);
+
+        combinacion6.setBackground(new java.awt.Color(204, 204, 204));
+        combinacion6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        combinacion6.setOpaque(true);
+
+        combinacion7.setBackground(new java.awt.Color(204, 204, 204));
+        combinacion7.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        combinacion7.setOpaque(true);
+
+        combinacion8.setBackground(new java.awt.Color(204, 204, 204));
+        combinacion8.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        combinacion8.setOpaque(true);
+
+        javax.swing.GroupLayout panel18Layout = new javax.swing.GroupLayout(panel18);
+        panel18.setLayout(panel18Layout);
+        panel18Layout.setHorizontalGroup(
+            panel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panel18Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(combinacion5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(combinacion6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(combinacion7, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(combinacion8, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        panel18Layout.setVerticalGroup(
+            panel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panel18Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(panel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(combinacion6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(combinacion5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(panel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(combinacion7, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(combinacion8, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(1, 1, 1))
+        );
+
+        panelPistas16.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        pista61.setBackground(new java.awt.Color(204, 204, 204));
+        pista61.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista61.setOpaque(true);
+
+        pista62.setBackground(new java.awt.Color(204, 204, 204));
+        pista62.setForeground(new java.awt.Color(51, 255, 51));
+        pista62.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista62.setOpaque(true);
+
+        pista63.setBackground(new java.awt.Color(204, 204, 204));
+        pista63.setForeground(new java.awt.Color(51, 255, 51));
+        pista63.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista63.setOpaque(true);
+
+        pista64.setBackground(new java.awt.Color(204, 204, 204));
+        pista64.setForeground(new java.awt.Color(51, 255, 51));
+        pista64.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        pista64.setOpaque(true);
+
+        javax.swing.GroupLayout panelPistas16Layout = new javax.swing.GroupLayout(panelPistas16);
+        panelPistas16.setLayout(panelPistas16Layout);
+        panelPistas16Layout.setHorizontalGroup(
+            panelPistas16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas16Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelPistas16Layout.createSequentialGroup()
+                        .addComponent(pista61, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista62, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelPistas16Layout.createSequentialGroup()
+                        .addComponent(pista63, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(3, 3, 3)
+                        .addComponent(pista64, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelPistas16Layout.setVerticalGroup(
+            panelPistas16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPistas16Layout.createSequentialGroup()
+                .addGap(2, 2, 2)
+                .addGroup(panelPistas16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista61, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista62, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3)
+                .addGroup(panelPistas16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pista63, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pista64, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout panelPrincipal1Layout = new javax.swing.GroupLayout(panelPrincipal1);
+        panelPrincipal1.setLayout(panelPrincipal1Layout);
+        panelPrincipal1Layout.setHorizontalGroup(
+            panelPrincipal1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelPrincipal1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelPrincipal1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panel13, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panel15, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panel16, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(panelPrincipal1Layout.createSequentialGroup()
+                        .addComponent(panelPistas16, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panel17, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(panel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(1, 1, 1))
+        );
+        panelPrincipal1Layout.setVerticalGroup(
+            panelPrincipal1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelPrincipal1Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(panel18, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(panelPrincipal1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(panel17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(panelPistas16, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
+        panelMenu1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        jLabel1.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jLabel1.setText("Jugador 2");
+
+        javax.swing.GroupLayout panelMenu1Layout = new javax.swing.GroupLayout(panelMenu1);
+        panelMenu1.setLayout(panelMenu1Layout);
+        panelMenu1Layout.setHorizontalGroup(
+            panelMenu1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelMenu1Layout.createSequentialGroup()
+                .addGap(61, 61, 61)
+                .addComponent(jLabel1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelMenu1Layout.setVerticalGroup(
+            panelMenu1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelMenu1Layout.createSequentialGroup()
+                .addGap(39, 39, 39)
+                .addComponent(jLabel1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(panelPrincipal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(panelMenu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(panelMenu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(panelPrincipal1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panelMenu1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(panelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelMenu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(panelPrincipal1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelMenu1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(panelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelMenu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void botonRojoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonRojoActionPerformed
-        if (posicionX < NUM_BOTONES_ANCHO - 1) 
+        if (posicionX < NUM_BOTONES_ANCHO - 1)
             posicionX++;
-        
-        botones[posicionY][posicionX].setBackground(Color.RED);
+            
+        botonesJugador1[posicionY][posicionX].setBackground(Color.RED);
+        enviar("btnRojo");
     }//GEN-LAST:event_botonRojoActionPerformed
 
     private void botonVerdeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonVerdeActionPerformed
         if (posicionX < NUM_BOTONES_ANCHO - 1) 
             posicionX++;
         
-        botones[posicionY][posicionX].setBackground(Color.GREEN);
+        botonesJugador1[posicionY][posicionX].setBackground(Color.GREEN);
+        enviar("btnVerde");
     }//GEN-LAST:event_botonVerdeActionPerformed
 
     private void botonAzulActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonAzulActionPerformed
         if (posicionX < NUM_BOTONES_ANCHO - 1) 
             posicionX++;
         
-        botones[posicionY][posicionX].setBackground(Color.BLUE);
+        botonesJugador1[posicionY][posicionX].setBackground(Color.BLUE);
+        enviar("btnAzul");
     }//GEN-LAST:event_botonAzulActionPerformed
 
     private void botonAmarilloActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonAmarilloActionPerformed
         if (posicionX < NUM_BOTONES_ANCHO - 1) 
             posicionX++;
         
-        botones[posicionY][posicionX].setBackground(Color.YELLOW);
+        botonesJugador1[posicionY][posicionX].setBackground(Color.YELLOW);
+        enviar("btnAmarillo");
     }//GEN-LAST:event_botonAmarilloActionPerformed
 
     private void botonRetrocederActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonRetrocederActionPerformed
 
          if (posicionX >= 0) {
-            botones[posicionY][posicionX].setBackground(new Color(238, 248, 251));
+            botonesJugador1[posicionY][posicionX].setBackground(new Color(238, 248, 251));
             posicionX--;
         }
+        enviar("btnRetroceder");
     }//GEN-LAST:event_botonRetrocederActionPerformed
 
     private void botonIntroducirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonIntroducirActionPerformed
         if (posicionX == NUM_BOTONES_ANCHO - 1 && posicionY < NUM_BOTONES_LARGO - 1) {
+            enviar("btnSalto");
             comprobarCasilla();
             posicionY++;
             posicionX = -1;
         }
         if(posicionX == NUM_BOTONES_ANCHO - 1 && posicionY == NUM_BOTONES_LARGO - 1)
-            finDelJuego();
+            finDelJuego("Has perdido :(");
     }//GEN-LAST:event_botonIntroducirActionPerformed
 
     /**
@@ -1346,21 +2428,51 @@ public class Mastermind extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MastermindServidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MastermindServidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MastermindServidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MastermindServidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
         //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Mastermind().setVisible(true);
+                new MastermindServidor().setVisible(true);
             }
         });
     }
@@ -1376,6 +2488,10 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JLabel combinacion2;
     private javax.swing.JLabel combinacion3;
     private javax.swing.JLabel combinacion4;
+    private javax.swing.JLabel combinacion5;
+    private javax.swing.JLabel combinacion6;
+    private javax.swing.JLabel combinacion7;
+    private javax.swing.JLabel combinacion8;
     private javax.swing.JLabel espacio1;
     private javax.swing.JLabel espacio10;
     private javax.swing.JLabel espacio11;
@@ -1402,13 +2518,55 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JLabel espacio30;
     private javax.swing.JLabel espacio31;
     private javax.swing.JLabel espacio32;
+    private javax.swing.JLabel espacio33;
+    private javax.swing.JLabel espacio34;
+    private javax.swing.JLabel espacio35;
+    private javax.swing.JLabel espacio36;
+    private javax.swing.JLabel espacio37;
+    private javax.swing.JLabel espacio38;
+    private javax.swing.JLabel espacio39;
     private javax.swing.JLabel espacio4;
+    private javax.swing.JLabel espacio40;
+    private javax.swing.JLabel espacio41;
+    private javax.swing.JLabel espacio42;
+    private javax.swing.JLabel espacio43;
+    private javax.swing.JLabel espacio44;
+    private javax.swing.JLabel espacio45;
+    private javax.swing.JLabel espacio46;
+    private javax.swing.JLabel espacio47;
+    private javax.swing.JLabel espacio48;
+    private javax.swing.JLabel espacio49;
     private javax.swing.JLabel espacio5;
+    private javax.swing.JLabel espacio50;
+    private javax.swing.JLabel espacio51;
+    private javax.swing.JLabel espacio52;
+    private javax.swing.JLabel espacio53;
+    private javax.swing.JLabel espacio54;
+    private javax.swing.JLabel espacio55;
+    private javax.swing.JLabel espacio56;
+    private javax.swing.JLabel espacio57;
+    private javax.swing.JLabel espacio58;
+    private javax.swing.JLabel espacio59;
     private javax.swing.JLabel espacio6;
+    private javax.swing.JLabel espacio60;
+    private javax.swing.JLabel espacio61;
+    private javax.swing.JLabel espacio62;
+    private javax.swing.JLabel espacio63;
+    private javax.swing.JLabel espacio64;
     private javax.swing.JLabel espacio7;
     private javax.swing.JLabel espacio8;
     private javax.swing.JLabel espacio9;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel panel1;
+    private javax.swing.JPanel panel10;
+    private javax.swing.JPanel panel11;
+    private javax.swing.JPanel panel12;
+    private javax.swing.JPanel panel13;
+    private javax.swing.JPanel panel14;
+    private javax.swing.JPanel panel15;
+    private javax.swing.JPanel panel16;
+    private javax.swing.JPanel panel17;
+    private javax.swing.JPanel panel18;
     private javax.swing.JPanel panel2;
     private javax.swing.JPanel panel3;
     private javax.swing.JPanel panel4;
@@ -1418,7 +2576,15 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JPanel panel8;
     private javax.swing.JPanel panel9;
     private javax.swing.JPanel panelMenu;
+    private javax.swing.JPanel panelMenu1;
     private javax.swing.JPanel panelPistas1;
+    private javax.swing.JPanel panelPistas10;
+    private javax.swing.JPanel panelPistas11;
+    private javax.swing.JPanel panelPistas12;
+    private javax.swing.JPanel panelPistas13;
+    private javax.swing.JPanel panelPistas14;
+    private javax.swing.JPanel panelPistas15;
+    private javax.swing.JPanel panelPistas16;
     private javax.swing.JPanel panelPistas2;
     private javax.swing.JPanel panelPistas3;
     private javax.swing.JPanel panelPistas4;
@@ -1426,7 +2592,9 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JPanel panelPistas6;
     private javax.swing.JPanel panelPistas7;
     private javax.swing.JPanel panelPistas8;
+    private javax.swing.JPanel panelPistas9;
     private javax.swing.JPanel panelPrincipal;
+    private javax.swing.JPanel panelPrincipal1;
     private javax.swing.JLabel pista1;
     private javax.swing.JLabel pista10;
     private javax.swing.JLabel pista11;
@@ -1453,9 +2621,41 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JLabel pista30;
     private javax.swing.JLabel pista31;
     private javax.swing.JLabel pista32;
+    private javax.swing.JLabel pista33;
+    private javax.swing.JLabel pista34;
+    private javax.swing.JLabel pista35;
+    private javax.swing.JLabel pista36;
+    private javax.swing.JLabel pista37;
+    private javax.swing.JLabel pista38;
+    private javax.swing.JLabel pista39;
     private javax.swing.JLabel pista4;
+    private javax.swing.JLabel pista40;
+    private javax.swing.JLabel pista41;
+    private javax.swing.JLabel pista42;
+    private javax.swing.JLabel pista43;
+    private javax.swing.JLabel pista44;
+    private javax.swing.JLabel pista45;
+    private javax.swing.JLabel pista46;
+    private javax.swing.JLabel pista47;
+    private javax.swing.JLabel pista48;
+    private javax.swing.JLabel pista49;
     private javax.swing.JLabel pista5;
+    private javax.swing.JLabel pista50;
+    private javax.swing.JLabel pista51;
+    private javax.swing.JLabel pista52;
+    private javax.swing.JLabel pista53;
+    private javax.swing.JLabel pista54;
+    private javax.swing.JLabel pista55;
+    private javax.swing.JLabel pista56;
+    private javax.swing.JLabel pista57;
+    private javax.swing.JLabel pista58;
+    private javax.swing.JLabel pista59;
     private javax.swing.JLabel pista6;
+    private javax.swing.JLabel pista60;
+    private javax.swing.JLabel pista61;
+    private javax.swing.JLabel pista62;
+    private javax.swing.JLabel pista63;
+    private javax.swing.JLabel pista64;
     private javax.swing.JLabel pista7;
     private javax.swing.JLabel pista8;
     private javax.swing.JLabel pista9;
