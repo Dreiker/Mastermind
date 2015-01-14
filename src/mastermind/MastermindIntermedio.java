@@ -8,14 +8,18 @@ package mastermind;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.text.NumberFormat;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 /**
  *
  * @author Juan Manuel
  */
-public class Mastermind extends javax.swing.JFrame {
+public class MastermindIntermedio extends javax.swing.JFrame implements Runnable {
 
     /**
      * Número de botones que hay en posición horizontal.
@@ -32,8 +36,12 @@ public class Mastermind extends javax.swing.JFrame {
     boolean amarilloUsado = false;
     char combinacionSecreta[] = new char[4];
 
+    boolean contar = true;
     int posicionY = 0;
     int posicionX = -1;
+    int intentos = 0;
+    int minutos = 3;
+    int segundos = 0;
 
     final char COLOR_ROJO = 'R';
     final char COLOR_VERDE = 'G';
@@ -43,8 +51,11 @@ public class Mastermind extends javax.swing.JFrame {
     JLabel[][] botones;
     JLabel[][] pistas;
 
-    public Mastermind() {
+    public MastermindIntermedio() {
         initComponents();
+
+        Thread thread = new Thread(this);
+        thread.start();
 
         // Inicializar componentes de la ventana.
         JLabel[][] botones = {
@@ -75,7 +86,16 @@ public class Mastermind extends javax.swing.JFrame {
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         this.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
 
-        //Generar combinación secreta.
+        generarClave();
+    }
+    //Generar combinación secreta.
+    private void generarClave() {
+
+        rojoUsado = false;
+        azulUsado = false;
+        verdeUsado = false;
+        amarilloUsado = false;
+        
         Random random = new Random();
 
         for (int i = 0; i < 4; i++) {
@@ -117,52 +137,60 @@ public class Mastermind extends javax.swing.JFrame {
                     break;
             }
         }
-        
+
         for (int i = 0; i < 4; i++) {
             System.out.println(combinacionSecreta[i]);
         }
     }
-    
-    private Color obtenerColor(char c){
-        if (c == 'R')
-        return Color.RED;
-        else if (c == 'G')
-        return Color.GREEN;
-        else if (c == 'B')
-        return Color.BLUE;
-        else if (c == 'Y')
-        return Color.YELLOW;
-        
+
+    private Color obtenerColor(char c) {
+        if (c == 'R') {
+            return Color.RED;
+        } else if (c == 'G') {
+            return Color.GREEN;
+        } else if (c == 'B') {
+            return Color.BLUE;
+        } else if (c == 'Y') {
+            return Color.YELLOW;
+        }
+
         return null;
     }
-    
+
     private void comprobarCasilla() {
-        
+
         for (int i = 0; i < 4; i++) {
-            if(botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i]))
+            if (botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i])) {
                 pistas[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GREEN);
-            else 
+            } else {
                 pistas[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GRAY);
-        }
-        
-         if(botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 0].getBackground() == obtenerColor(combinacionSecreta[0])
-                    && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 1].getBackground() == obtenerColor(combinacionSecreta[1])
-                    && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 2].getBackground() == obtenerColor(combinacionSecreta[2])
-                    && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 3].getBackground() == obtenerColor(combinacionSecreta[3])){
-                finDelJuego();
             }
+        }
+
+        if (botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 0].getBackground() == obtenerColor(combinacionSecreta[0])
+                && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 1].getBackground() == obtenerColor(combinacionSecreta[1])
+                && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 2].getBackground() == obtenerColor(combinacionSecreta[2])
+                && botones[posicionY][posicionX - NUM_BOTONES_ANCHO + 1 + 3].getBackground() == obtenerColor(combinacionSecreta[3])) {
+            finDelJuego();
+            JOptionPane.showMessageDialog(this, "¡Has acertado! Puntuacion: " + ((minutos * 60 + segundos) * 7));
+            this.setVisible(false);
+            MenuInicio menu = new MenuInicio();
+            menu.setVisible(true);
+        }
     }
-    
-    private void finDelJuego(){
-        if(posicionY == NUM_BOTONES_LARGO - 1){
+
+    private void finDelJuego() {
+        contar = false;
+        if (posicionY == NUM_BOTONES_LARGO - 1) {
             for (int i = 0; i < 4; i++) {
-                if(botones[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i]))
+                if (botones[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].getBackground() == obtenerColor(combinacionSecreta[i])) {
                     pistas[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GREEN);
-                else 
+                } else {
                     pistas[NUM_BOTONES_LARGO - 1][posicionX - NUM_BOTONES_ANCHO + 1 + i].setBackground(Color.GRAY);
+                }
             }
         }
-        
+
         botonRojo.setEnabled(false);
         botonVerde.setEnabled(false);
         botonAzul.setEnabled(false);
@@ -174,33 +202,7 @@ public class Mastermind extends javax.swing.JFrame {
         combinacion2.setBackground(obtenerColor(combinacionSecreta[1]));
         combinacion3.setBackground(obtenerColor(combinacionSecreta[2]));
         combinacion4.setBackground(obtenerColor(combinacionSecreta[3]));
-        
-    }
 
-    private void bonusMode() {
-
-        Random random = new Random();
-
-        for (int y = 0; y < NUM_BOTONES_LARGO; y++) {
-            for (int x = 0; x < NUM_BOTONES_ANCHO; x++) {
-
-                switch (random.nextInt(4)) {
-                    case 0:
-                        botones[y][x].setBackground(Color.red);
-                        break;
-                    case 1:
-                        botones[y][x].setBackground(Color.green);
-                        break;
-                    case 2:
-                        botones[y][x].setBackground(Color.blue);
-                        break;
-                    case 3:
-                        botones[y][x].setBackground(Color.yellow);
-                        break;
-                }
-
-            }
-        }
     }
 
     /**
@@ -305,6 +307,11 @@ public class Mastermind extends javax.swing.JFrame {
         pista30 = new javax.swing.JLabel();
         pista31 = new javax.swing.JLabel();
         pista32 = new javax.swing.JLabel();
+        jPanel1 = new javax.swing.JPanel();
+        campoTiempo = new javax.swing.JLabel();
+        jPanel2 = new javax.swing.JPanel();
+        campoIntentos = new javax.swing.JLabel();
+        botonReinicio = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -1230,8 +1237,7 @@ public class Mastermind extends javax.swing.JFrame {
                         .addComponent(panelPistas8, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(panel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(panel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(1, 1, 1))
+                    .addComponent(panel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         panelPrincipalLayout.setVerticalGroup(
             panelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1259,61 +1265,132 @@ public class Mastermind extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder(), "Tiempo"));
+
+        campoTiempo.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        campoTiempo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        campoTiempo.setText("0:00");
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(campoTiempo, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(1, 1, 1)
+                .addComponent(campoTiempo)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder(), "Intentos"));
+
+        campoIntentos.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        campoIntentos.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        campoIntentos.setText("0");
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(campoIntentos, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addComponent(campoIntentos)
+                .addGap(0, 1, Short.MAX_VALUE))
+        );
+
+        botonReinicio.setIcon(new javax.swing.ImageIcon("C:\\Users\\Juan Manuel\\Google Drive\\Mastermind sync\\res\\btnReinicio.png")); // NOI18N
+        botonReinicio.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botonReinicioActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(panelPrincipal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(panelMenu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(botonReinicio, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(panelMenu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(panelPrincipal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGap(15, 15, 15)
                 .addComponent(panelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(8, 8, 8)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(botonReinicio, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelMenu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(panelMenu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(16, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void botonRojoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonRojoActionPerformed
-        if (posicionX < NUM_BOTONES_ANCHO - 1) 
+        if (posicionX < NUM_BOTONES_ANCHO - 1) {
             posicionX++;
-        
+        }
+
         botones[posicionY][posicionX].setBackground(Color.RED);
     }//GEN-LAST:event_botonRojoActionPerformed
 
     private void botonVerdeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonVerdeActionPerformed
-        if (posicionX < NUM_BOTONES_ANCHO - 1) 
+        if (posicionX < NUM_BOTONES_ANCHO - 1) {
             posicionX++;
-        
+        }
+
         botones[posicionY][posicionX].setBackground(Color.GREEN);
     }//GEN-LAST:event_botonVerdeActionPerformed
 
     private void botonAzulActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonAzulActionPerformed
-        if (posicionX < NUM_BOTONES_ANCHO - 1) 
+        if (posicionX < NUM_BOTONES_ANCHO - 1) {
             posicionX++;
-        
+        }
+
         botones[posicionY][posicionX].setBackground(Color.BLUE);
     }//GEN-LAST:event_botonAzulActionPerformed
 
     private void botonAmarilloActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonAmarilloActionPerformed
-        if (posicionX < NUM_BOTONES_ANCHO - 1) 
+        if (posicionX < NUM_BOTONES_ANCHO - 1) {
             posicionX++;
-        
+        }
+
         botones[posicionY][posicionX].setBackground(Color.YELLOW);
     }//GEN-LAST:event_botonAmarilloActionPerformed
 
     private void botonRetrocederActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonRetrocederActionPerformed
 
-         if (posicionX >= 0) {
+        if (posicionX >= 0) {
             botones[posicionY][posicionX].setBackground(new Color(238, 248, 251));
             posicionX--;
         }
@@ -1321,57 +1398,54 @@ public class Mastermind extends javax.swing.JFrame {
 
     private void botonIntroducirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonIntroducirActionPerformed
         if (posicionX == NUM_BOTONES_ANCHO - 1 && posicionY < NUM_BOTONES_LARGO - 1) {
+            campoIntentos.setText(String.valueOf(++intentos));
             comprobarCasilla();
             posicionY++;
             posicionX = -1;
+            
         }
-        if(posicionX == NUM_BOTONES_ANCHO - 1 && posicionY == NUM_BOTONES_LARGO - 1)
+        if (posicionX == NUM_BOTONES_ANCHO - 1 && posicionY == NUM_BOTONES_LARGO - 1) {
             finDelJuego();
+            campoIntentos.setText(String.valueOf(++intentos));
+            JOptionPane.showMessageDialog(this, "Has perdido :(");
+            this.setVisible(false);
+            MenuInicio menu = new MenuInicio();
+            menu.setVisible(true);
+        }
+
     }//GEN-LAST:event_botonIntroducirActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Mastermind.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold>
+    private void botonReinicioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonReinicioActionPerformed
+        generarClave();
+        
+        contar = true;
+        posicionX = -1;
+        posicionY = 0;
+        intentos = 0;
+        minutos = 3;
+        segundos = 0;
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Mastermind().setVisible(true);
+        NumberFormat formato = NumberFormat.getInstance();
+        formato.setMinimumIntegerDigits(2);
+        campoTiempo.setText(minutos + ":" + formato.format(segundos));
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 4; x++) {
+                botones[y][x].setBackground(new Color(238, 248, 251));
+                pistas[y][x].setBackground(new Color(238, 248, 251));
             }
-        });
-    }
+        }
+    }//GEN-LAST:event_botonReinicioActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton botonAmarillo;
     private javax.swing.JButton botonAzul;
     private javax.swing.JButton botonIntroducir;
+    private javax.swing.JButton botonReinicio;
     private javax.swing.JButton botonRetroceder;
     private javax.swing.JButton botonRojo;
     private javax.swing.JButton botonVerde;
+    private javax.swing.JLabel campoIntentos;
+    private javax.swing.JLabel campoTiempo;
     private javax.swing.JLabel combinacion1;
     private javax.swing.JLabel combinacion2;
     private javax.swing.JLabel combinacion3;
@@ -1408,6 +1482,8 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JLabel espacio7;
     private javax.swing.JLabel espacio8;
     private javax.swing.JLabel espacio9;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel panel1;
     private javax.swing.JPanel panel2;
     private javax.swing.JPanel panel3;
@@ -1460,4 +1536,36 @@ public class Mastermind extends javax.swing.JFrame {
     private javax.swing.JLabel pista8;
     private javax.swing.JLabel pista9;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void run() {
+        while (contar) {
+            try {
+                if (segundos > 0) {
+                    segundos--;
+                } else {
+                    minutos--;
+                    segundos = 59;
+                }
+
+                if (minutos == 0 && segundos == 0) {
+                    finDelJuego();
+                    JOptionPane.showMessageDialog(this, "Has perdido :(");
+                    this.setVisible(false);
+                    MenuInicio menu = new MenuInicio();
+                    menu.setVisible(true);
+                }
+                NumberFormat formato = NumberFormat.getInstance();
+                formato.setMinimumIntegerDigits(2);
+
+                campoTiempo.setText(minutos + ":" + formato.format(segundos));
+
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(MastermindIntermedio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+    }
 }
